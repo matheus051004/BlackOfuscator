@@ -69,18 +69,27 @@ buildscript {
 }
 ```
 
-#### A3. Apply the plugin in your app
+#### A3. Apply and configure the plugin in your app
 
 ```kotlin
 // app/build.gradle.kts
 plugins {
     alias(libs.plugins.android.application)
-    apply(plugin = "string-encrypt")
+}
+
+apply(plugin = "string-encrypt")
+
+configure<StringEncryptExtension> {
+    key.set("my-secret-key")
+    decryptorPackage.set("com.myapp.encrypted")
+    // ... other options
 }
 ```
 
+> **Note:** When using JitPack, use `apply(plugin = "string-encrypt")` + `configure<...>` instead of `id("string-encrypt")` + `stringEncrypt { ... }`. The latter only works with composite builds.
+
 > **Tip:** Replace `main-SNAPSHOT` with a specific commit hash or tag for reproducible builds, e.g.:
-> `classpath("com.github.matheus051004:BlackOfuscator:81d91c9")`
+> `classpath("com.github.matheus051004:BlackOfuscator:45c727e")`
 
 ### Option B: Local build-logic module
 
