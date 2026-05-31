@@ -2,6 +2,10 @@
 
 Gradle plugin for Android that automatically encrypts string literals in compiled bytecode using ASM class transformation. Strings are encrypted at build time and decrypted at runtime via JNI native code, no source code modification needed.
 
+> **⚠️ Nenhuma ofuscagem é 100% segura.** Dedicando tempo e recursos suficientes, qualquer proteção pode ser revertida. O BlackOfuscator não é uma solução definitiva — é uma **camada extra de segurança** que aumenta significativamente o custo e o esforço necessários para extrair informações sensíveis do seu app. Pense nisso como um cadeado: não impede quem tem a chave certa, mas desencoraja a maioria dos invasores.
+>
+> **No obfuscation is 100% bulletproof.** Given enough time and resources, any protection can be reversed. BlackOfuscator is not a silver bullet — it's an **additional security layer** that raises the bar for extracting sensitive information from your app. Think of it as a lock: it won't stop someone with the right key, but it deters most attackers.
+
 ## How it works
 
 1. During the build, the plugin scans all project classes matching the configured package filter
