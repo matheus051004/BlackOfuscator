@@ -1,6 +1,6 @@
 # BlackOfuscator
 
-Gradle plugin for Android that automatically encrypts string literals in compiled bytecode using ASM class transformation. Strings are encrypted at build time and decrypted at runtime via JNI native code — no source code modification needed.
+Gradle plugin for Android that automatically encrypts string literals in compiled bytecode using ASM class transformation. Strings are encrypted at build time and decrypted at runtime via JNI native code, no source code modification needed.
 
 ## How it works
 
@@ -9,7 +9,7 @@ Gradle plugin for Android that automatically encrypts string literals in compile
 3. Multiple decryptor classes with obfuscated names are auto-generated into `build/generated/stringDecryptors/`
 4. A `NativeBridge.java` JNI bridge class is generated that loads the native decryption library
 5. A `native_decrypt.c` file is generated with embedded XOR-obfuscated keys and compiled into a native `.so` via CMake
-6. The decryptors form a **dependency chain** — each class calls helper methods on other classes, making isolated analysis much harder
+6. The decryptors form a **dependency chain**, each class calls helper methods on other classes, making isolated analysis much harder
 7. Framework constants (Android services, Intent actions, MIME types, etc.) are automatically skipped
 8. Each encrypted string includes a per-instance salt, so identical plaintexts produce different ciphertexts
 
@@ -17,10 +17,10 @@ Gradle plugin for Android that automatically encrypts string literals in compile
 
 Each string goes through multiple transformations before encoding:
 
-1. **Per-string salt** — a random salt byte is generated per string at build time and prepended to the encrypted data. This ensures the same string encrypted in two different locations produces different output.
-2. **XOR with salt-shifted key + position** — each byte is XORed with `key[(i + salt) % keyLen] XOR ((i + salt) & 0xFF)`, combining the encryption key, the per-string salt, and the byte position.
-3. **Bit rotation** — each byte is rotated 4 bits (swapping high and low nibbles).
-4. **Integrity check** — a check byte (`salt XOR 0xA7`) is included to validate the salt at decryption time.
+1. **Per-string salt**, a random salt byte is generated per string at build time and prepended to the encrypted data. This ensures the same string encrypted in two different locations produces different output.
+2. **XOR with salt-shifted key + position**, each byte is XORed with `key[(i + salt) % keyLen] XOR ((i + salt) & 0xFF)`, combining the encryption key, the per-string salt, and the byte position.
+3. **Bit rotation**, each byte is rotated 4 bits (swapping high and low nibbles).
+4. **Integrity check**, a check byte (`salt XOR 0xA7`) is included to validate the salt at decryption time.
 
 The encrypted bytes are then Base64-encoded and stored as string constants in the DEX bytecode.
 
@@ -80,7 +80,7 @@ mkdir -p app/src/main/cpp
 **Already have native code?** You can add `native_decrypt.c` to an existing library instead of creating a dedicated one. Just include it alongside your other sources:
 
 ```cmake
-# You already have this — just add native_decrypt.c to it
+# You already have this, just add native_decrypt.c to it
 add_library(
     mylib
     SHARED
@@ -157,7 +157,7 @@ stringEncrypt {
 If you use R8 minification, add a keep rule to `proguard-rules.pro`:
 
 ```proguard
-# String encryption decryptors — auto-generated obfuscated classes
+# String encryption decryptors, auto-generated obfuscated classes
 # Keep entire class hierarchy (fields + methods) because R8 cannot see ASM-injected calls
 -keep class com.myapp.encrypted._d** { *; }
 ```
@@ -180,7 +180,7 @@ Replace `com.myapp.encrypted` with your configured `decryptorPackage`.
 | `decryptorPackage` | `String` | `"com.myapp.encrypted"` | Package for the auto-generated decryptor classes. |
 | `decryptorCount` | `Int` | `3` | Number of decryptor classes to generate. Strings are distributed round-robin. |
 | `nativeLibName` | `String` | `"BlackOfuscator"` | Name of the native `.so` library. Must match your `CMakeLists.txt`. |
-| `prefix` | `String` | `"com/myapp"` | Broad filter — all project classes under this prefix are candidates. Use slash notation. |
+| `prefix` | `String` | `"com/myapp"` | Broad filter, all project classes under this prefix are candidates. Use slash notation. |
 | `packages` | `List<String>` | `[]` (empty) | When set, overrides `prefix`. Only classes in these packages are encrypted. Use dot notation. |
 | `controlFlowObfuscation` | `Boolean` | `true` | Inject opaque predicates before method calls and sensitive field access. |
 
@@ -190,16 +190,16 @@ The plugin generates the following files on every build (safe to delete, regener
 
 ### Java classes (`build/generated/stringDecryptors/<package>/`)
 
-- **`NativeBridge.java`** — JNI bridge class that loads the native library and exposes `d(int idx, String s)` for decryption
-- **`_da.java`, `_db.java`, ...** — Decryptor classes with obfuscated names. Each delegates to `NativeBridge.d()`. Contains decoy fields (`_s`, `_dep`, `_k`) and methods (`_h`, `_m`) that look like they participate in decryption but are obfuscation decoys
+- **`NativeBridge.java`**, JNI bridge class that loads the native library and exposes `d(int idx, String s)` for decryption
+- **`_da.java`, `_db.java`, ...**, Decryptor classes with obfuscated names. Each delegates to `NativeBridge.d()`. Contains decoy fields (`_s`, `_dep`, `_k`) and methods (`_h`, `_m`) that look like they participate in decryption but are obfuscation decoys
 
 ### Native code (`src/main/cpp/`)
 
-- **`native_decrypt.c`** — JNI C implementation with embedded XOR-obfuscated key arrays. Contains the `Java_<package>_NativeBridge_d` function that Base64-decodes, validates integrity, and decrypts the string. Compiled into the native `.so` via CMake.
+- **`native_decrypt.c`**, JNI C implementation with embedded XOR-obfuscated key arrays. Contains the `Java_<package>_NativeBridge_d` function that Base64-decodes, validates integrity, and decrypts the string. Compiled into the native `.so` via CMake.
 
 ### Dependency chain
 
-The decryptor classes form a dependency chain where ~70% of classes reference other classes via helper methods. This means an attacker cannot understand the decryption logic by analyzing a single class — they must trace the full chain across multiple classes, each with its own unique S-box permutation and mixing key.
+The decryptor classes form a dependency chain where ~70% of classes reference other classes via helper methods. This means an attacker cannot understand the decryption logic by analyzing a single class, they must trace the full chain across multiple classes, each with its own unique S-box permutation and mixing key.
 
 Example chain: `_da → _do → _dz → _dn → _de → ...`
 
@@ -207,15 +207,15 @@ Example chain: `_da → _do → _dz → _dn → _de → ...`
 
 The plugin maintains an internal skip list of ~300+ strings that should never be encrypted:
 
-- **Android service names** — `"window"`, `"activity"`, `"connectivity"`, etc.
-- **Intent actions** — `"android.intent.action.MAIN"`, `"android.intent.action.VIEW"`, etc.
-- **Intent categories** — `"android.intent.category.LAUNCHER"`, etc.
-- **MIME types** — `"text/plain"`, `"application/json"`, etc.
-- **Framework identifiers** — `"UTF-8"`, `"SHA-256"`, `"GET"`, `"POST"`, etc.
-- **XML namespaces** — `"http://schemas.android.com/apk/res/android"`, etc.
-- **Common constants** — `"true"`, `"false"`, `"visible"`, `"gone"`, `"match_parent"`, etc.
-- **Package prefixes** — `android.*`, `java.*`, `javax.*`, `kotlin.*`, `org.json.*`, etc.
-- **Native library load calls** — `System.loadLibrary()` and `System.load()` arguments are never encrypted
+- **Android service names**, `"window"`, `"activity"`, `"connectivity"`, etc.
+- **Intent actions**, `"android.intent.action.MAIN"`, `"android.intent.action.VIEW"`, etc.
+- **Intent categories**, `"android.intent.category.LAUNCHER"`, etc.
+- **MIME types**, `"text/plain"`, `"application/json"`, etc.
+- **Framework identifiers**, `"UTF-8"`, `"SHA-256"`, `"GET"`, `"POST"`, etc.
+- **XML namespaces**, `"http://schemas.android.com/apk/res/android"`, etc.
+- **Common constants**, `"true"`, `"false"`, `"visible"`, `"gone"`, `"match_parent"`, etc.
+- **Package prefixes**, `android.*`, `java.*`, `javax.*`, `kotlin.*`, `org.json.*`, etc.
+- **Native library load calls**, `System.loadLibrary()` and `System.load()` arguments are never encrypted
 
 This prevents crashes from encrypted framework constants like `Context.WINDOW_SERVICE` (which javac inlines as `"window"`).
 
@@ -246,16 +246,16 @@ if (22153 != 0) {
 This multiplies the apparent complexity of every method. Combined with string encryption, the decompiled output becomes significantly harder to analyze.
 
 Injection targets:
-- **Method calls** — every `invokevirtual`, `invokestatic`, `invokeinterface` (except constructors)
-- **Sensitive field access** — fields with names containing `url`, `token`, `key`, `secret`, `password`, or `api`
+- **Method calls**, every `invokevirtual`, `invokestatic`, `invokeinterface` (except constructors)
+- **Sensitive field access**, fields with names containing `url`, `token`, `key`, `secret`, `password`, or `api`
 
 ## Limitations
 
-- **Compile-time constants only** — the plugin encrypts string literals that javac inlines as `LDC` instructions. Runtime-constructed strings (concatenation, `StringBuilder`) are not affected.
-- **SharedPreferences** — if your app stores string keys in SharedPreferences, encrypting them means existing data is "lost" on upgrade (keys change from plaintext to encrypted). Users will need to re-login once.
-- **Reflection** — strings passed to `Class.forName()`, `getMethod()`, etc. will break if encrypted. The skip list handles most common cases, but if you use reflection with custom class names, add them to the skip list or use `packages` to exclude those classes.
-- **Build time** — ASM transformation adds a few seconds to the build. Only affects project classes (not library dependencies).
-- **AGP required** — this plugin uses AGP's `AsmClassVisitorFactory` API for bytecode transformation. It requires the Android Gradle Plugin to be applied in the consuming project.
+- **Compile-time constants only**, the plugin encrypts string literals that javac inlines as `LDC` instructions. Runtime-constructed strings (concatenation, `StringBuilder`) are not affected.
+- **SharedPreferences**, if your app stores string keys in SharedPreferences, encrypting them means existing data is "lost" on upgrade (keys change from plaintext to encrypted). Users will need to re-login once.
+- **Reflection**, strings passed to `Class.forName()`, `getMethod()`, etc. will break if encrypted. The skip list handles most common cases, but if you use reflection with custom class names, add them to the skip list or use `packages` to exclude those classes.
+- **Build time**, ASM transformation adds a few seconds to the build. Only affects project classes (not library dependencies).
+- **AGP required**, this plugin uses AGP's `AsmClassVisitorFactory` API for bytecode transformation. It requires the Android Gradle Plugin to be applied in the consuming project.
 
 ## Requirements
 
