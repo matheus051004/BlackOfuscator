@@ -26,7 +26,100 @@ The encrypted bytes are then Base64-encoded and stored as string constants in th
 
 ## Setup
 
-### 1. Apply the plugin
+There are two ways to install the plugin: **directly from GitHub** (via JitPack) or as a **local build-logic module**.
+
+### Option A: Install from GitHub (JitPack)
+
+This is the simplest approach — no need to copy any files into your project.
+
+#### A1. Add JitPack repository
+
+```kotlin
+// settings.gradle.kts (project root)
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }  // add this
+    }
+}
+```
+
+#### A2. Add the plugin dependency
+
+```kotlin
+// build.gradle.kts (project root)
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+    dependencies {
+        classpath("com.github.matheus051004:BlackOfuscator:main-SNAPSHOT")
+    }
+}
+```
+
+#### A3. Apply the plugin in your app
+
+```kotlin
+// app/build.gradle.kts
+plugins {
+    alias(libs.plugins.android.application)
+    apply(plugin = "string-encrypt")
+}
+```
+
+> **Tip:** Replace `main-SNAPSHOT` with a specific commit hash or tag for reproducible builds, e.g.:
+> `classpath("com.github.matheus051004:BlackOfuscator:81d91c9")`
+
+### Option B: Local build-logic module
+
+Use this if you want to customize the plugin source or avoid the JitPack dependency.
+
+#### B1. Copy the plugin
+
+Copy the `src/` and `build.gradle.kts` into your project:
+
+```
+your-project/
+├── build-logic/
+│   ├── settings.gradle.kts      # include(":string-encrypt")
+│   └── string-encrypt/
+│       ├── build.gradle.kts
+│       ├── settings.gradle.kts
+│       └── src/main/kotlin/
+│           ├── StringEncryptPlugin.kt
+│           ├── AsmStringEncryptVisitor.kt
+│           └── ControlFlowObfuscationVisitor.kt
+├── app/
+└── settings.gradle.kts          # includeBuild("build-logic")
+```
+
+#### B2. Register the composite build
+
+```kotlin
+// settings.gradle.kts (project root)
+pluginManagement {
+    includeBuild("build-logic")
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+```
+
+#### B3. Apply the plugin
 
 ```kotlin
 // app/build.gradle.kts
